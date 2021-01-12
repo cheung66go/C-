@@ -4,11 +4,11 @@
 
 AcWordXml::AcWordXml()
 {
-	//´´½¨Ò»¸öXMLµÄÎÄµµ¶ÔÏó¡£
+	//åˆ›å»ºä¸€ä¸ªXMLçš„æ–‡æ¡£å¯¹è±¡ã€‚
 	myDocument = new TiXmlDocument();
 	TiXmlDeclaration* decl = new TiXmlDeclaration("1.0", "GB2312", "");
 	myDocument->LinkEndChild(decl);
-	//´´½¨Ò»¸ö¸ùÔªËØ²¢Á¬½Ó¡£
+	//åˆ›å»ºä¸€ä¸ªæ ¹å…ƒç´ å¹¶è¿žæŽ¥ã€‚
 	RootElement = new TiXmlElement("w:wordDocument");
 	RootElement->SetAttribute("xmlns:w", "http://schemas.microsoft.com/office/word/2003/wordml");
 	RootElement->SetAttribute("xmlns:wx", "http://schemas.microsoft.com/office/word/2003/auxHint");
@@ -58,7 +58,7 @@ void tableBorder(TiXmlElement *tbPosit, TiXmlElement *tbBd)
 	tbBd->LinkEndChild(tbPosit);
 }
 
-void AcWordXml::CreateXmlTable(std::vector<std::vector<CString>>&textArray,const BOOL TableAlignment)
+void AcWordXml::CreateXmlTable(std::vector<std::vector<CString>>&textArray,const BOOL TableAlignment,const int tableTextsize, const BOOL tableBorden,const int totalTablewidth)
 {
 	if (textArray.size() <= 0) return;
 	std::vector<CString>&lineArray = textArray[0];
@@ -79,7 +79,7 @@ void AcWordXml::CreateXmlTable(std::vector<std::vector<CString>>&textArray,const
 	tbjc->SetAttribute("w:val", temp);
 	tblPr->LinkEndChild(tbjc);
 
-	//adjust everygrid width
+	//adjust everygrid width ;there are some errors
 	//TiXmlElement *tbGridWidth = new TiXmlElement("w:tblGrid");
 	//table->LinkEndChild(tbGridWidth);
 	//TiXmlElement *tblGridCol = new TiXmlElement("w:gridCol");
@@ -89,12 +89,13 @@ void AcWordXml::CreateXmlTable(std::vector<std::vector<CString>>&textArray,const
 	//tblGridCol2->SetAttribute("w:w", "3000");
 	//tbGridWidth->LinkEndChild(tblGridCol2);
 
-	//TiXmlElement *tblW = new TiXmlElement("w:tblW");
-	//tblPr->LinkEndChild(tblW);
-	//tblW->SetAttribute("w:type", "dxa");
-	//tblW->SetAttribute("w:w", "2880");
+	//adjust total table width
+	TiXmlElement *tblW = new TiXmlElement("w:tblW");
+	tblPr->LinkEndChild(tblW);
+	tblW->SetAttribute("w:type", "dxa");
+	tblW->SetAttribute("w:w", totalTablewidth);
 
-	////
+	
 	TiXmlElement *tblLook= new TiXmlElement("w:tblLook");
 	tblLook->SetAttribute("w:val", "04A0");
 	tblPr->LinkEndChild(tblLook);
@@ -140,24 +141,18 @@ void AcWordXml::CreateXmlTable(std::vector<std::vector<CString>>&textArray,const
 			tabler->LinkEndChild(tcPr);
 			TiXmlElement *tcW = new TiXmlElement("w:tcW");
 			tcW->SetAttribute("w:w", "3500");
-			tcW->SetAttribute("w:type", "dxa");
+			tcW->SetAttribute("w:type","dxa");
 			tcPr->LinkEndChild(tcW);
 			TiXmlElement *tp2 = new TiXmlElement("w:p");
 			tc->LinkEndChild(tp2);
-			TiXmlElement *tr2 = new TiXmlElement("w:r");
-			tp2->LinkEndChild(tr2);
-			TiXmlElement *tt2 = new TiXmlElement("w:t");
-			CString tempText = tempArray[j];
-			tt2->LinkEndChild(new TiXmlText(tempText));
-			tr2->LinkEndChild(tt2);
+			CreateXmlText(tp2, tempArray[j], tableBorden, tableTextsize);
 		}
 	}
-	
 }
 
- /*newline:ÎÄ×ÖÉÏÏÂ¿Õ¸ñ
-textspace£ºÎÄ×ÖÖ®¼ä¼ä¸ô
-textClr:16½øÖÆÑÕÉ«´úÂë
+ /*newline:æ–‡å­—ä¸Šä¸‹ç©ºæ ¼
+textspaceï¼šæ–‡å­—ä¹‹é—´é—´éš”
+textClr:16è¿›åˆ¶é¢œè‰²ä»£ç 
 */
 void AcWordXml::CreateXmlText(TiXmlElement *paragraph, const CString text, const bool bBorden , const int textsize ,const CString textClr, const bool bNewLine, const  int bEachTextSpace )
 {	
@@ -195,12 +190,12 @@ void AcWordXml::CreateXmlText(TiXmlElement *paragraph, const CString text, const
 	tr->LinkEndChild(tt);
 }
 
-void AcWordXml::CreateXmlaragraph(const BOOL paragraphAlignment)
+void AcWordXml::CreateXmlaragraph(const BOOL paragraphAlignment,const int pbefore,const int pafter)
 {
 	TiXmlElement *paragraphNew = new TiXmlElement("w:p");
 	paragraph = paragraphNew;
 	bodyElement->LinkEndChild(paragraph);
-	//w:spacing w:before="120" w:after="120"/>
+	
 	TiXmlElement *pPr = new TiXmlElement("w:pPr");
 	paragraphNew->LinkEndChild(pPr);
 	TiXmlElement *pjc = new TiXmlElement("w:jc");
@@ -209,8 +204,7 @@ void AcWordXml::CreateXmlaragraph(const BOOL paragraphAlignment)
 	pPr->LinkEndChild(pjc);
 	
 	TiXmlElement *pspace = new TiXmlElement("w:spacing");
-	//CString temp = adjustAlignment(paragraphAlignment);
-	pspace->SetAttribute("w:before", 480);
-	pspace->SetAttribute("w:after", 120);
+	pspace->SetAttribute("w:before", pbefore);
+	pspace->SetAttribute("w:after", pafter);
 	pPr->LinkEndChild(pspace);
 }
